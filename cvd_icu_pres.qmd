@@ -1,0 +1,178 @@
+---
+title: "Predicting ICU Need"
+subtitle: "During the Covid-19 Pandemic"
+author: "Charles C Barnes"
+institute: "QuickStart, Inc."
+date: "7/22/2024"
+format: 
+  revealjs:
+    incremental: true
+jupyter: python3
+---
+
+```{python, setup}
+#| include: false
+
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from datetime import datetime
+
+report_date = f'{datetime.now():%m-%d-%Y}'
+report_date
+
+data = pd.read_excel('./data/Kaggle_Sirio_Libanes_ICU_Prediction.xlsx')
+```
+
+## Our Problem
+
+We are facing overcapacity of the intensive care unit system from the Covid-19 pandemic.
+
+- Decreased capacity to treat people with severe cases of covid
+- Decreased capacity to treat people without covid who need the ICU.
+
+## A Solution
+
+Can we predict whether a person will need ICU treatment?
+
+- increase recovery/stability potential
+- decrease time to recovery/stability
+- effective material use for people who need it most
+- material/bed space availability
+
+## Our Dataset
+
+Across 385 people treated for covid:
+
+::: {.nonincremental}
+- demographics
+- disease history
+- blood test results
+- vital signs
+- time window of admittance to ICU
+:::
+
+## What was the ICU need?
+
+::: {.columns}
+
+::: {.column width="70%"}
+```{python}
+#| echo: false
+
+target_df = data[['PATIENT_VISIT_IDENTIFIER', 'ICU']].groupby('PATIENT_VISIT_IDENTIFIER').nunique().rename(columns={'ICU': 'loc'}).merge(
+    data[data['WINDOW'] == '0-2'][['PATIENT_VISIT_IDENTIFIER', 'ICU']].rename(columns={'ICU': 'Init'}),
+    on='PATIENT_VISIT_IDENTIFIER'
+)
+
+target_df = target_df.assign(
+    lab = target_df['loc'].astype(str) + '_' + target_df['Init'].astype(str),
+)
+
+target_df['lab'] = target_df['lab']\
+    .map({
+        '1_0': 'No ICU need',
+        '2_0': 'Moved to ICU',
+        '1_1': 'Began in ICU'
+    })
+
+plot = sns.barplot(data=target_df['lab'].value_counts())
+plot.set_ylabel(' ')
+sns.despine()
+plot.bar_label(plot.containers[0]);
+```
+:::
+
+::: {.column width="30%"}
+```{python}
+# create data
+size_of_groups=[12,11,3,30]
+
+# Create a pieplot
+plt.pie(size_of_groups)
+
+# add a circle at the center to transform it in a donut chart
+my_circle=plt.Circle( (0,0), 0.7, color='white')
+
+p=plt.gcf()
+p.gca().add_artist(my_circle)
+```
+:::
+
+:::
+
+## 
+
+```{python}
+
+```
+
+```{python}
+target_groups_df = target_df[(target_df['lab'] == 'Moved to ICU') | (target_df['lab'] == 'No ICU need')]\
+    .merge(
+        data[['PATIENT_VISIT_IDENTIFIER', 'AGE_ABOVE65','GENDER', 'DISEASE GROUPING 1', 'DISEASE GROUPING 2', 'DISEASE GROUPING 3', 'DISEASE GROUPING 4', 'DISEASE GROUPING 5', 'DISEASE GROUPING 6', 'HTN', 'IMMUNOCOMPROMISED']],
+        on='PATIENT_VISIT_IDENTIFIER'
+    )\
+    .groupby('PATIENT_VISIT_IDENTIFIER')\
+    .head(1)
+
+target_groups_df = target_groups_df[['PATIENT_VISIT_IDENTIFIER', 'lab', 'AGE_ABOVE65', 'GENDER']]\
+    .assign(
+        comorbid = target_groups_df['DISEASE GROUPING 1'] + target_groups_df['DISEASE GROUPING 2'] + target_groups_df['DISEASE GROUPING 3'] + target_groups_df['DISEASE GROUPING 4'] + target_groups_df['DISEASE GROUPING 5'] + target_groups_df['DISEASE GROUPING 6'] + target_groups_df['HTN'] + target_groups_df['IMMUNOCOMPROMISED']
+    )
+
+target_groups_df['comorbid'] = np.where(target_groups_df['comorbid'] > 0, 1, 0)
+```
+
+```{python}
+next_step = target_groups_df[['lab', 'AGE_ABOVE65']]\
+    .groupby('lab')\
+    .value_counts().reset_index()
+
+next_step = next_step\
+    .assign(
+        perc = next_step[0] / 163
+    )
+```
+
+```{python}
+next_step2 = next_step[next_step['lab'] == 'Moved to ICU']\
+    .merge(
+        next_step[next_step['lab'] == 'No ICU need']\
+            [['AGE_ABOVE65', 'perc']],
+        on='AGE_ABOVE65'
+    )
+
+next_step2 = next_step2.assign(
+    perc_chg = (next_step2['perc_x'] - next_step2['perc_y']) * 100
+)
+```
+
+```{python}
+sns.barplot(
+    data=next_step2, 
+    y='AGE_ABOVE65', 
+    x='perc_chg',
+    orient='h'
+)
+sns.despine()
+```
+
+## Limitations
+
+Model (what this model addresses):
+
+- That people will need the ICU
+- NOT
+  - when they will need to be moved to the ICU?
+  - Regressor for time moved to the ICU
+
+Dataset (what we can ask of the data):
+
+- What is ICU stay duration?
+  - above 12 can include 13 or 24 hours after being admitted
+- What was the person's recovery outcome?
+
+## Recommendation
+I recommend that the model be used to supplement medical expertise and discretion to identify people who will need more monitoring and may ultimately be moved to the ICU. 
