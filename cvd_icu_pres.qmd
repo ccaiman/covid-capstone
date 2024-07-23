@@ -7,6 +7,8 @@ date: "7/22/2024"
 format: 
   revealjs:
     incremental: true
+    logo: qs_logo.png
+    footer: "Capstone project"
 jupyter: python3
 ---
 
@@ -23,11 +25,19 @@ report_date = f'{datetime.now():%m-%d-%Y}'
 report_date
 
 data = pd.read_excel('./data/Kaggle_Sirio_Libanes_ICU_Prediction.xlsx')
+
+data_clean = pd.read_csv('./data/mldata1.csv').drop(columns='Unnamed: 0')
+
+data_clean['ICU Need?'] = data_clean['target']\
+    .map({
+        0: 'No',
+        1: 'Yes'
+    })
 ```
 
-## Our Problem
+## The Problem
 
-We are facing overcapacity of the intensive care unit system from the Covid-19 pandemic.
+We are facing overcapacity of the intensive care unit system globally from the Covid-19 pandemic.
 
 - Decreased capacity to treat people with severe cases of covid
 - Decreased capacity to treat people without covid who need the ICU.
@@ -38,8 +48,8 @@ Can we predict whether a person will need ICU treatment?
 
 - increase recovery/stability potential
 - decrease time to recovery/stability
-- effective material use for people who need it most
-- material/bed space availability
+- effective resource use for people who need it most
+- bed space availability
 
 ## Our Dataset
 
@@ -53,11 +63,12 @@ Across 385 people treated for covid:
 - time window of admittance to ICU
 :::
 
-## What was the ICU need?
+## What was the ICU need? {.smaller}
 
-::: {.columns}
+::: {.rows}
 
-::: {.column width="70%"}
+::: {.row height="50%"}
+
 ```{python}
 #| echo: false
 
@@ -82,31 +93,22 @@ plot.set_ylabel(' ')
 sns.despine()
 plot.bar_label(plot.containers[0]);
 ```
+
 :::
 
-::: {.column width="30%"}
-```{python}
-# create data
-size_of_groups=[12,11,3,30]
+::: {.row height="50%"}
 
-# Create a pieplot
-plt.pie(size_of_groups)
+163 people were moved to the ICU and 190 people never needed the ICU.
 
-# add a circle at the center to transform it in a donut chart
-my_circle=plt.Circle( (0,0), 0.7, color='white')
-
-p=plt.gcf()
-p.gca().add_artist(my_circle)
-```
 :::
 
 :::
 
-## 
+## People moved to the ICU
 
-```{python}
+::: {.columns}
 
-```
+::: {.column width="50%"}
 
 ```{python}
 target_groups_df = target_df[(target_df['lab'] == 'Moved to ICU') | (target_df['lab'] == 'No ICU need')]\
@@ -126,53 +128,341 @@ target_groups_df['comorbid'] = np.where(target_groups_df['comorbid'] > 0, 1, 0)
 ```
 
 ```{python}
-next_step = target_groups_df[['lab', 'AGE_ABOVE65']]\
-    .groupby('lab')\
-    .value_counts().reset_index()
 
-next_step = next_step\
-    .assign(
-        perc = next_step[0] / 163
+```
+
+
+```{python}
+empty_df = pd.DataFrame()
+
+for i in range(2,5):
+    col_name = target_groups_df.columns[i]
+
+    next_step = target_groups_df[['lab', col_name]]\
+        .groupby('lab')\
+        .value_counts().reset_index()
+
+    next_step['total'] = next_step['lab']\
+        .map({
+            "Moved to ICU": 163,
+            "No ICU need": 190
+        })
+
+    next_step = next_step\
+        .assign(
+            perc = next_step[0] / next_step['total']
+        )
+
+    next_step2 = next_step[next_step['lab'] == 'Moved to ICU']\
+        .merge(
+            next_step[next_step['lab'] == 'No ICU need']\
+                [[col_name, 'perc']],
+            on=col_name
+        )
+
+    next_step2 = next_step2.assign(
+        perc_chg = (next_step2['perc_x'] - next_step2['perc_y']) * 100
     )
+
+    next_step2 = next_step2.rename(columns={col_name: 'presence'})
+
+    next_step2['category'] = col_name
+
+    empty_df = pd.concat([empty_df, next_step2])
+
+perc_df = empty_df[empty_df['presence'] == 1]
 ```
 
 ```{python}
-next_step2 = next_step[next_step['lab'] == 'Moved to ICU']\
-    .merge(
-        next_step[next_step['lab'] == 'No ICU need']\
-            [['AGE_ABOVE65', 'perc']],
-        on='AGE_ABOVE65'
-    )
+fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(3,4))
 
-next_step2 = next_step2.assign(
-    perc_chg = (next_step2['perc_x'] - next_step2['perc_y']) * 100
-)
+cols = list(set(perc_df['category']))
+
+titles_dict = {
+    "GENDER": "Gender",
+    "AGE_ABOVE65": "Age >65",
+    "comorbid": "Comorbidities present"
+}
+
+for i in range(3):
+
+    plot = sns.barplot(
+        data=perc_df[perc_df['category'] == cols[i]], 
+        y='presence', 
+        x='perc_chg',
+        orient='h',
+        ax=axes[i]
+    )
+    plot.set_title(titles_dict[cols[i]])
+    plot.set_ylabel(' ')
+    plot.set_xlim(perc_df['perc_chg'].min() - 3, perc_df['perc_chg'].max() + 3)
+    if i == 2:
+        plot.set_xlabel('Percent change')
+    else:
+        plot.set_xlabel(' ')
+
+    plot.get_yaxis().set_visible(False)
+    sns.despine()
+    plt.tight_layout()
 ```
+
+:::
+
+::: {.column width="50%"}
+
+The people who needed the ICU:
+
+- were biased by gender
+- were older than 65 by ~30% increased representation
+- had comorbidities by ~15% increased representation
+
+:::
+
+:::
+
+## PCR and predictive measures {.scrollable}
+
+::: {.panel-tabset}
+
+### Na
 
 ```{python}
-sns.barplot(
-    data=next_step2, 
-    y='AGE_ABOVE65', 
-    x='perc_chg',
-    orient='h'
+sns.regplot(
+    data=data_clean[data_clean['ICU Need?'] == 'No'],
+    x='PCR_MEAN', 
+    y='SODIUM_MEAN', 
+    color='#1f77b4',
+    marker=' '
 )
-sns.despine()
+
+sns.regplot(
+    data=data_clean[data_clean['ICU Need?'] == 'Yes'],
+    x='PCR_MEAN', 
+    y='SODIUM_MEAN', 
+    color='#ff7f0e',
+    marker=' '
+)
+
+hue_order = ['No', 'Yes']
+
+sns.scatterplot(
+    data=data_clean, 
+    x='PCR_MEAN', 
+    y='SODIUM_MEAN', 
+    hue='ICU Need?',
+    hue_order=hue_order
+)
+
+ax = plt.gca()
+ax.set(
+    xlabel='PCR',
+    ylabel='Blood Sodium'
+)
+
 ```
 
-## Limitations
+### Ca
+
+```{python}
+sns.regplot(
+    data=data_clean[data_clean['ICU Need?'] == 'No'],
+    x='PCR_MEAN', 
+    y='CALCIUM_MEAN', 
+    color='#1f77b4',
+    marker=' '
+)
+
+sns.regplot(
+    data=data_clean[data_clean['ICU Need?'] == 'Yes'],
+    x='PCR_MEAN', 
+    y='CALCIUM_MEAN', 
+    color='#ff7f0e',
+    marker=' '
+)
+
+sns.scatterplot(
+    data=data_clean, 
+    x='PCR_MEAN', 
+    y='CALCIUM_MEAN', 
+    hue='ICU Need?',
+    hue_order=hue_order
+)
+
+ax = plt.gca()
+ax.set(
+    xlabel='PCR',
+    ylabel='Blood Calcium'
+)
+
+```
+
+### Resp
+
+```{python}
+sns.regplot(
+    data=data_clean[data_clean['ICU Need?'] == 'No'],
+    x='PCR_MEAN', 
+    y='RESPIRATORY_RATE_MEAN', 
+    color='#1f77b4',
+    marker=' '
+)
+
+sns.regplot(
+    data=data_clean[data_clean['ICU Need?'] == 'Yes'],
+    x='PCR_MEAN', 
+    y='RESPIRATORY_RATE_MEAN', 
+    color='#ff7f0e',
+    marker=' '
+)
+
+sns.scatterplot(
+    data=data_clean, 
+    x='PCR_MEAN', 
+    y='RESPIRATORY_RATE_MEAN', 
+    hue='ICU Need?',
+    hue_order=hue_order
+)
+
+ax = plt.gca()
+ax.set(
+    xlabel='PCR',
+    ylabel='Respiratory rate'
+)
+
+```
+
+:::
+
+. . .
+
+People with different ICU needs overlap substantially.
+
+
+
+## Modeling decisions {.scrollable}
+
+Fill imputation
+
+::: {.fragment .fade-left}
+
+ICU feature engineering:
+
+- identify people moved to ICU and recode a 'target'
+  - 'target' identifies people who were moved to ICU
+- drop rows after ICU admission
+  - to predict at some time before being admitted to ICU whether someone will need the ICU
+
+:::
+
+::: {.fragment .fade-left}
+Feature selection
+
+::: {.nonincremental}
+- remove highly correlated features
+:::
+
+:::
+
+::: {.fragment .fade-left}
+Random undersampling 'No' ICU need
+
+::: {.nonincremental}
+- match amount of 'Yes' values.
+:::
+
+:::
+
+::: {.fragment .fade-left}
+70:15:15 train-test-validation split
+
+::: {.nonincremental}
+- 644:138:138 samples representing people
+:::
+
+:::
+
+::: {.fragment .fade-left}
+
+::: {.fragment .semi-fade-out}
+logistic regression
+
+decision tree
+:::
+random forest
+:::
+
+::: {.fragment .fade-left}
+Best feature selection 
+
+- model accuracy and variance among models
+
+Hyperparameter tuning
+
+- scoring to minimize the difference between predicted and actual 'target' values
+:::
+
+## Final model performance
+
+Random forest model:
+
+::: {.nonincremental}
+- 50 features
+:::
+
+::: {.fragment .fade-left}
+ICU need: Yes
+
+::: {.nonincremental}
+- 97% correct 
+- recalled 70 of 73 people
+:::
+
+:::
+
+::: {.fragment .fade-left}
+ICU need: No
+
+::: {.nonincremental}
+- 95% correct 
+- recalled 63 of 65 people
+:::
+
+:::
+
+## Recommendation
+
+I recommend that the model be used to supplement medical expertise and discretion to identify people who will need more monitoring and may ultimately be moved to the ICU. 
+
+::: {.fragment .fade-left}
+Evaluate changes related to implementing the model for triage:
+
+- What is the outcome for people treated in the ICU?
+- What is the ICU stay duration?
+- What is the total hospital stay duration?
+- Hospital expenditures?
+- Ability to meet ICU needs other than covid cases?
+:::
+
+## Limitations {.smaller}
 
 Model (what this model addresses):
 
-- That people will need the ICU
-- NOT
-  - when they will need to be moved to the ICU?
+- Whether people will need the ICU or not
+- NOT: when they will need to be moved to the ICU?
   - Regressor for time moved to the ICU
 
 Dataset (what we can ask of the data):
 
-- What is ICU stay duration?
-  - above 12 can include 13 or 24 hours after being admitted
+- When were people moved to the ICU?
+  - "above-12" can include 13 or 24 hours after being admitted
+- What was the ICU stay duration?
+  - can we predict recovery time too?
 - What was the person's recovery outcome?
 
-## Recommendation
-I recommend that the model be used to supplement medical expertise and discretion to identify people who will need more monitoring and may ultimately be moved to the ICU. 
+## Thank you {.center}
+
+I would make a COVID-19 joke, but it would be tasteless.
+
+::: {.r-stack}
+Thank you for the all you do to meet this challenge head on with a face mask!
+::: 
