@@ -1,0 +1,10 @@
+Validation subset classification:
+              precision    recall  f1-score   support
+
+           0       0.95      0.97      0.96        65
+           1       0.97      0.96      0.97        73
+
+    accuracy                           0.96       138
+   macro avg       0.96      0.96      0.96       138
+weighted avg       0.96      0.96      0.96       138
+
