@@ -3,7 +3,8 @@ title: "Predicting ICU Need"
 subtitle: "During the Covid-19 Pandemic"
 author: "Charles C Barnes"
 institute: "QuickStart, Inc."
-date: "7/22/2024"
+date: last-modified
+date-format: long
 format: 
   revealjs:
     incremental: true
@@ -35,21 +36,30 @@ data_clean['ICU Need?'] = data_clean['target']\
     })
 ```
 
+
+## {.center}
+
+I would make a COVID-19 joke, but it would be tasteless.
+
 ## The Problem
 
-We are facing overcapacity of the intensive care unit system globally from the Covid-19 pandemic.
+We are facing overcapacity of the hospital system globally from the Covid-19 pandemic.
 
-- Decreased capacity to treat people with severe cases of covid
-- Decreased capacity to treat people without covid who need the ICU.
+- Decreased capacity to treat people with severe cases of covid in the intensive care unit
+- Decreased capacity to treat people without covid who need the ICU
+
+. . .
+
+Not everyone admitted to the hospital for covid requires the ICU
 
 ## A Solution
 
 Can we predict whether a person will need ICU treatment?
 
-- increase recovery/stability potential
-- decrease time to recovery/stability
-- effective resource use for people who need it most
-- bed space availability
+- Increase recovery/stability potential
+- Decrease time to recovery/stability
+- Effective resource use for people who need it most
+- Bed space availability
 
 ## Our Dataset
 
@@ -220,7 +230,7 @@ The people who needed the ICU:
 
 :::
 
-## PCR and predictive measures {.scrollable}
+## PCR^[A test detecting coronavirus] and predictive measures {.scrollable}
 
 ::: {.panel-tabset}
 
@@ -341,16 +351,18 @@ People with different ICU needs overlap substantially.
 
 ## Modeling decisions {.scrollable}
 
-Fill imputation
+::: {.fragment .fade-left}
+Filled missing values using neighboring values
+:::
 
 ::: {.fragment .fade-left}
 
-ICU feature engineering:
+Target feature engineering:
 
-- identify people moved to ICU and recode a 'target'
-  - 'target' identifies people who were moved to ICU
-- drop rows after ICU admission
-  - to predict at some time before being admitted to ICU whether someone will need the ICU
+::: {.nonincremental}
+- identify people moved to ICU and recode as 'target'
+- drop data entries **during and after** ICU admission
+:::
 
 :::
 
@@ -358,7 +370,7 @@ ICU feature engineering:
 Feature selection
 
 ::: {.nonincremental}
-- remove highly correlated features
+- to remove highly correlated features
 :::
 
 :::
@@ -367,7 +379,7 @@ Feature selection
 Random undersampling 'No' ICU need
 
 ::: {.nonincremental}
-- match amount of 'Yes' values.
+- to match amount of 'Yes' values.
 :::
 
 :::
@@ -376,7 +388,7 @@ Random undersampling 'No' ICU need
 70:15:15 train-test-validation split
 
 ::: {.nonincremental}
-- 644:138:138 samples representing people
+- 644:138:138 samples representing people^[People admitted to the hospital for covid treatment]
 :::
 
 :::
@@ -384,19 +396,19 @@ Random undersampling 'No' ICU need
 ::: {.fragment .fade-left}
 
 ::: {.fragment .semi-fade-out}
-logistic regression
+Logistic regression
 
-decision tree
+Decision tree
 :::
-random forest
+Random forest
 :::
 
 ::: {.fragment .fade-left}
-Best feature selection 
+Best features
 
 - model accuracy and variance among models
 
-Hyperparameter tuning
+Model tuning
 
 - scoring to minimize the difference between predicted and actual 'target' values
 :::
@@ -431,16 +443,16 @@ ICU need: No
 
 ## Recommendation
 
-I recommend that the model be used to supplement medical expertise and discretion to identify people who will need more monitoring and may ultimately be moved to the ICU. 
+I recommend that the model be used to supplement medical expertise and discretion when identifying people who need more monitoring and may ultimately be moved to the ICU. 
 
 ::: {.fragment .fade-left}
-Evaluate changes related to implementing the model for triage:
+Changes from implementing the model for triage:
 
 - What is the outcome for people treated in the ICU?
 - What is the ICU stay duration?
 - What is the total hospital stay duration?
-- Hospital expenditures?
-- Ability to meet ICU needs other than covid cases?
+- Hospital resources?
+- Ability to meet other ICU needs?
 :::
 
 ## Limitations {.smaller}
@@ -448,12 +460,12 @@ Evaluate changes related to implementing the model for triage:
 Model (what this model addresses):
 
 - Whether people will need the ICU or not
-- NOT: when they will need to be moved to the ICU?
+- NOT: when will they require the ICU?
   - Regressor for time moved to the ICU
 
 Dataset (what we can ask of the data):
 
-- When were people moved to the ICU?
+- When were people moved to the ICU^[Was this delay due to symptom worsening or no beds available?]?
   - "above-12" can include 13 or 24 hours after being admitted
 - What was the ICU stay duration?
   - can we predict recovery time too?
@@ -461,8 +473,4 @@ Dataset (what we can ask of the data):
 
 ## Thank you {.center}
 
-I would make a COVID-19 joke, but it would be tasteless.
-
-::: {.r-stack}
-Thank you for the all you do to meet this challenge head on with a face mask!
-::: 
+For the work you do to meet this challenge head on with a face mask!
