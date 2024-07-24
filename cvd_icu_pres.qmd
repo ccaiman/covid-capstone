@@ -11,6 +11,7 @@ format:
     logo: qs_logo.png
     footer: "Capstone project"
 jupyter: python3
+bibliography: library.bib
 ---
 
 ```{python, setup}
@@ -230,7 +231,7 @@ The people who needed the ICU:
 
 :::
 
-## PCR^[A test detecting coronavirus] and predictive measures {.scrollable}
+## PCR^[A test detecting coronavirus. Viral load correlates with disease severity [@Sanche2022]] and predictive measures {.scrollable}
 
 ::: {.panel-tabset}
 
@@ -469,8 +470,14 @@ Dataset (what we can ask of the data):
   - "above-12" can include 13 or 24 hours after being admitted
 - What was the ICU stay duration?
   - can we predict recovery time too?
-- What was the person's recovery outcome?
+- What was the person's recovery outcome^[We now know that recovery is dependent upon viral load and mitigating it as soon as possible [@Sanche2022].]?
 
 ## Thank you {.center}
 
 For the work you do to meet this challenge head on with a face mask!
+
+## References
+
+::: {#refs}
+
+:::
