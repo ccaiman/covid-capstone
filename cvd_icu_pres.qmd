@@ -37,34 +37,29 @@ data_clean['ICU Need?'] = data_clean['target']\
     })
 ```
 
-
-## {.center}
-
-I would make a COVID-19 joke, but it would be tasteless.
-
 ## The Problem
 
-We are facing overcapacity of the hospital system globally from the Covid-19 pandemic.
+We are facing overcapacity of the hospital system globally from the COVID-19 pandemic.
 
 - Decreased capacity to treat people with severe cases of covid in the intensive care unit
-- Decreased capacity to treat people without covid who need the ICU
+- Decreased capacity to treat people without COVID who need the ICU
 
 . . .
 
-Not everyone admitted to the hospital for covid requires the ICU
+Not everyone admitted to the hospital for COVID requires the ICU
 
 ## A Solution
 
 Can we predict whether a person will need ICU treatment?
 
 - Increase recovery/stability potential
-- Decrease time to recovery/stability
+- Decrease time to recovery/stability^[Mitigating viral load early on improves recovery [@Sanche2022]]
 - Effective resource use for people who need it most
 - Bed space availability
 
 ## Our Dataset
 
-Across 385 people treated for covid:
+Across 385 people treated for COVID:
 
 ::: {.nonincremental}
 - demographics
@@ -136,10 +131,6 @@ target_groups_df = target_groups_df[['PATIENT_VISIT_IDENTIFIER', 'lab', 'AGE_ABO
     )
 
 target_groups_df['comorbid'] = np.where(target_groups_df['comorbid'] > 0, 1, 0)
-```
-
-```{python}
-
 ```
 
 
@@ -389,7 +380,7 @@ Random undersampling 'No' ICU need
 70:15:15 train-test-validation split
 
 ::: {.nonincremental}
-- 644:138:138 samples representing people^[People admitted to the hospital for covid treatment]
+- 644:138:138 samples representing people^[People admitted to the hospital for COVID treatment]
 :::
 
 :::
@@ -466,11 +457,14 @@ Model (what this model addresses):
 
 Dataset (what we can ask of the data):
 
+- Do results generalize to people globally?
 - When were people moved to the ICU^[Was this delay due to symptom worsening or no beds available?]?
   - "above-12" can include 13 or 24 hours after being admitted
-- What was the ICU stay duration?
-  - can we predict recovery time too?
-- What was the person's recovery outcome^[We now know that recovery is dependent upon viral load and mitigating it as soon as possible [@Sanche2022].]?
+- Could we predict recovery time too?^[We now know that recovery is dependent upon viral load and mitigating it as soon as possible [@Sanche2022].]
+
+## {.center}
+
+The model and data fits our primary need to quickly identify whether or not people will need the ICU.
 
 ## Thank you {.center}
 

@@ -22,7 +22,7 @@ The dataset includes demographics, previous disease history, blood biomarkers, v
 
 ## Exploratory data analysis (EDA)
 
-EDA of data types with descriptive statistics and plots. I used eatmaps and scatterplots to analyze correlated features.
+EDA of data types with descriptive statistics and plots. I used heatmaps and scatterplots to analyze correlated features.
 
 ## Data cleaning/preprocessing
 
@@ -57,4 +57,4 @@ The model predicts whether someone will require admission to the ICU within 12 h
 
 The model does not include time as a feature/target and does not predict when a person will require the ICU.
 
-With more time on this project, I might consider stratified resampling to improve model performance. Some `DISEASE GROUPING` features were rare in the dataset by EDA and I wonder if the model had difficulty learning any patterns that might there.
+With more time on this project, I might consider stratified resampling to improve model performance. Some `DISEASE GROUPING` features were rare in the dataset by EDA and I wonder if the model had difficulty learning any patterns that might be there.
